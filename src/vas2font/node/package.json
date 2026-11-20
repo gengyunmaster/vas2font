@@ -1,0 +1,8 @@
+{
+  "name": "vas2font-outline",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "perfect-freehand": "1.2.3"
+  }
+}
