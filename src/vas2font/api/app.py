@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from vas2font.api.backup_routes import router as backup_router
 from vas2font.api.config import get_settings
 from vas2font.api.db import sessions
 from vas2font.api.errors import ApiError
@@ -42,6 +43,7 @@ app.include_router(template_router)
 app.include_router(upload_router)
 app.include_router(font_router)
 app.include_router(inspection_router)
+app.include_router(backup_router)
 
 
 @app.exception_handler(ApiError)

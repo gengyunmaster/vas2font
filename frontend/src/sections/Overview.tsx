@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { api } from "../api";
+import { api, apiBlob, downloadBlob } from "../api";
 import { ConfirmDialog } from "../components/Modal";
 import type { Project } from "../types";
 
@@ -46,6 +46,19 @@ export function Overview({ project, onChanged, onDeleted }: OverviewProps) {
       setError(caught instanceof Error ? caught.message : "Unable to delete the project");
       setDeleting(false);
       setConfirming(false);
+    }
+  }
+
+  async function downloadBackup() {
+    setError("");
+    try {
+      const response = await apiBlob(`/api/projects/${project.id}/backup`);
+      downloadBlob(
+        await response.blob(),
+        `${project.font_family.replace(/[^A-Za-z0-9_-]+/g, "-") || "project"}-backup.vas2font.json`,
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to download the backup");
     }
   }
 
@@ -106,6 +119,16 @@ export function Overview({ project, onChanged, onDeleted }: OverviewProps) {
             </dd>
           </div>
         </dl>
+        <div className="backup-panel">
+          <h3>Portable project backup</h3>
+          <p>
+            Export metadata, custom templates, original notebooks, and upload priority. Access codes
+            are never included.
+          </p>
+          <button type="button" className="button button-secondary" onClick={downloadBackup}>
+            Download backup
+          </button>
+        </div>
       </section>
       <aside className="paper-card danger-card">
         <p className="eyebrow">Danger zone</p>

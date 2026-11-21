@@ -12,7 +12,7 @@ export function Home({ onOpen }: HomeProps) {
   const [fontVersion, setFontVersion] = useState("1.0");
   const [codeInput, setCodeInput] = useState("");
   const [created, setCreated] = useState<ProjectCreated | null>(null);
-  const [busy, setBusy] = useState<"create" | "open" | null>(null);
+  const [busy, setBusy] = useState<"create" | "open" | "import" | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -47,6 +47,25 @@ export function Home({ onOpen }: HomeProps) {
       onOpen(project.id, codeInput);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to open the project");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function importBackup(file: File | null) {
+    if (!file) return;
+    setBusy("import");
+    setError("");
+    try {
+      const data = JSON.parse(await file.text());
+      const project = await api<ProjectCreated>("/api/projects/import", {
+        method: "POST",
+        jsonBody: data,
+      });
+      setCreated(project);
+      setCopied(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to import the project backup");
     } finally {
       setBusy(null);
     }
@@ -125,6 +144,23 @@ export function Home({ onOpen }: HomeProps) {
               {busy === "open" ? "Opening..." : "Open project"}
             </button>
           </form>
+        </div>
+        <div className="paper-card action-card">
+          <p className="section-number">03</p>
+          <h2>Import a backup</h2>
+          <p>
+            Restore templates, notebooks, metadata, and priority order as a new project with a new
+            access code.
+          </p>
+          <label className="button button-secondary backup-file-button">
+            {busy === "import" ? "Importing..." : "Import project backup"}
+            <input
+              type="file"
+              accept=".json,application/json"
+              disabled={busy !== null}
+              onChange={(event) => importBackup(event.target.files?.[0] ?? null)}
+            />
+          </label>
         </div>
         {error && (
           <p className="form-error home-error" role="alert">
