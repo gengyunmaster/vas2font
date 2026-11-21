@@ -89,6 +89,7 @@ class TemplateResponse(BaseModel):
     version: int
     built_in: bool
     character_count: int
+    characters: str
     created_at: datetime
     updated_at: datetime
 

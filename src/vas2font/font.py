@@ -237,14 +237,14 @@ def postscript_name(family_name: str) -> str:
     return f"{normalized or 'VASHandwriting'}-Regular"
 
 
-def font_names(family_name: str) -> dict[str, str]:
+def font_names(family_name: str, font_version: str = "0.1") -> dict[str, str]:
     return {
         "familyName": family_name,
         "styleName": "Regular",
-        "uniqueFontIdentifier": f"{family_name} Regular 0.1",
+        "uniqueFontIdentifier": f"{family_name} Regular {font_version}",
         "fullName": f"{family_name} Regular",
         "psName": postscript_name(family_name),
-        "version": "Version 0.1",
+        "version": f"Version {font_version}",
     }
 
 
@@ -252,6 +252,7 @@ def build_ttf_companion(
     source_path: Path,
     output_path: Path,
     family_name: str,
+    font_version: str,
 ) -> None:
     with TTFont(source_path) as source:
         glyph_set = source.getGlyphSet()
@@ -283,7 +284,7 @@ def build_ttf_companion(
             ascent=source["hhea"].ascent,
             descent=source["hhea"].descent,
         )
-        builder.setupNameTable(font_names(family_name), mac=False)
+        builder.setupNameTable(font_names(family_name, font_version), mac=False)
         builder.setupOS2(
             sTypoAscender=source["OS/2"].sTypoAscender,
             sTypoDescender=source["OS/2"].sTypoDescender,
@@ -315,6 +316,7 @@ def build_font(
     output_path: Path,
     family_name: str,
     ttf_output_path: Path | None = None,
+    font_version: str = "0.1",
 ) -> FontBuildResult:
     if not extraction.glyphs:
         raise ValueError("No handwriting was found")
@@ -337,18 +339,34 @@ def build_font(
             round(compiled.bounds[0]) if compiled.bounds else 0,
         )
         outline_point_count += compiled.point_count
+    space_width = round(reference_glyph(" ", 1.0).advance * UNITS_PER_EM)
+    for name in ("space", "nbsp"):
+        char_strings[name] = T2CharStringPen(space_width, None).getCharString()
+        metrics[name] = (space_width, 0)
+        glyph_bounds[name] = None
     glyph_order = [
         ".notdef",
+        "space",
+        "nbsp",
         *(glyph_name(glyph.character) for glyph in extraction.glyphs),
     ]
     character_map = {
-        ord(glyph.character): glyph_name(glyph.character) for glyph in extraction.glyphs
+        0x20: "space",
+        0xA0: "nbsp",
+        **{
+            ord(glyph.character): glyph_name(glyph.character)
+            for glyph in extraction.glyphs
+        },
     }
     builder = FontBuilder(UNITS_PER_EM, isTTF=False)
-    builder.setupHead(fontRevision=0.1, created=timestampNow(), modified=timestampNow())
+    builder.setupHead(
+        fontRevision=float(font_version),
+        created=timestampNow(),
+        modified=timestampNow(),
+    )
     builder.setupGlyphOrder(glyph_order)
     builder.setupCharacterMap(character_map)
-    names = font_names(family_name)
+    names = font_names(family_name, font_version)
     ps_name = names["psName"]
     builder.setupCFF(
         ps_name,
@@ -395,6 +413,7 @@ def build_font(
             output_path,
             ttf_output_path,
             f"{family_name} TT",
+            font_version,
         )
     return FontBuildResult(
         path=output_path,

@@ -60,6 +60,14 @@ class TemplateRecord(Base):
     def character_count(self) -> int:
         return int(self.manifest["character_count"])
 
+    @property
+    def characters(self) -> str:
+        return "".join(
+            cell["character"]
+            for page in self.manifest["pages"]
+            for cell in page["cells"]
+        )
+
 
 class UploadRecord(Base):
     __tablename__ = "uploads"

@@ -3,10 +3,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
+from vas2font.api.config import get_settings
 from vas2font.api.db import sessions
 from vas2font.api.errors import ApiError
+from vas2font.api.font_routes import router as font_router
 from vas2font.api.routes import router
 from vas2font.api.template_routes import router as template_router
 from vas2font.api.template_service import ensure_builtin_templates
@@ -31,6 +34,7 @@ app = FastAPI(
 app.include_router(router)
 app.include_router(template_router)
 app.include_router(upload_router)
+app.include_router(font_router)
 
 
 @app.exception_handler(ApiError)
@@ -71,3 +75,25 @@ async def security_headers(request: Request, call_next):
         "object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
     )
     return response
+
+
+frontend_dist = get_settings().frontend_dist.resolve()
+if frontend_dist.is_dir():
+    assets = frontend_dist / "assets"
+    if assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets), name="assets")
+
+    @app.get("/{resource_path:path}", include_in_schema=False)
+    def frontend(resource_path: str) -> FileResponse:
+        if resource_path.startswith("api/"):
+            raise ApiError(404, "endpoint_not_found", "The API endpoint was not found")
+        candidate = (frontend_dist / resource_path).resolve()
+        if (
+            resource_path
+            and candidate.is_relative_to(frontend_dist)
+            and candidate.is_file()
+        ):
+            return FileResponse(candidate)
+        return FileResponse(
+            frontend_dist / "index.html", headers={"Cache-Control": "no-cache"}
+        )

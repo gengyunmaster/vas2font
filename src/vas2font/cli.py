@@ -30,6 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     generate_font.add_argument("--output", type=Path, required=True)
     generate_font.add_argument("--ttf-output", type=Path)
     generate_font.add_argument("--font-family", default="VAS Handwriting")
+    generate_font.add_argument("--font-version", default="0.1")
     return parser
 
 
@@ -56,6 +57,7 @@ def main() -> None:
             arguments.output,
             arguments.font_family,
             arguments.ttf_output,
+            font_version=arguments.font_version,
         )
     except (TypeError, ValueError, RuntimeError) as error:
         parser.error(str(error))
