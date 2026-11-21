@@ -319,17 +319,22 @@ def build_font(
     family_name: str,
     ttf_output_path: Path | None = None,
     font_version: str = "0.1",
+    progress_callback: Callable[[str, int], None] | None = None,
 ) -> FontBuildResult:
     if not extraction.glyphs:
         raise ValueError("No handwriting was found")
     strokes = [stroke for glyph in extraction.glyphs for stroke in glyph.strokes]
+    if progress_callback:
+        progress_callback("Outlining handwriting", 15)
     outlines = outline_strokes(strokes)
+    if progress_callback:
+        progress_callback("Building glyph contours", 35)
     outline_offset = 0
     char_strings = {".notdef": notdef_char_string()}
     metrics = {".notdef": (600, 80)}
     glyph_bounds: dict[str, Bounds | None] = {".notdef": (80.0, 0.0, 520.0, 700.0)}
     outline_point_count = 0
-    for glyph in extraction.glyphs:
+    for glyph_index, glyph in enumerate(extraction.glyphs, start=1):
         glyph_outlines = outlines[outline_offset : outline_offset + len(glyph.strokes)]
         outline_offset += len(glyph.strokes)
         compiled = glyph_char_string(glyph_outlines, glyph)
@@ -341,6 +346,9 @@ def build_font(
             round(compiled.bounds[0]) if compiled.bounds else 0,
         )
         outline_point_count += compiled.point_count
+        if progress_callback:
+            progress = 35 + round(45 * glyph_index / len(extraction.glyphs))
+            progress_callback("Building glyph contours", progress)
     space_width = round(reference_glyph(" ", 1.0).advance * UNITS_PER_EM)
     for name in ("space", "nbsp"):
         char_strings[name] = T2CharStringPen(space_width, None).getCharString()
@@ -360,6 +368,8 @@ def build_font(
             for glyph in extraction.glyphs
         },
     }
+    if progress_callback:
+        progress_callback("Writing OpenType tables", 85)
     builder = FontBuilder(UNITS_PER_EM, isTTF=False)
     builder.setupHead(
         fontRevision=float(font_version),
@@ -407,9 +417,13 @@ def build_font(
     builder.setupDummyDSIG()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     builder.save(output_path)
+    if progress_callback:
+        progress_callback("Validating font", 95)
     with TTFont(output_path) as font:
         if font.sfntVersion != "OTTO" or font.getBestCmap() != character_map:
             raise RuntimeError("Generated font validation failed")
+    if progress_callback:
+        progress_callback("Font ready", 100)
     if ttf_output_path is not None:
         build_ttf_companion(
             output_path,

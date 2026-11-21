@@ -148,3 +148,17 @@ class GlyphInspectionResponse(BaseModel):
     duplicates: int
     offset: int
     limit: int
+
+
+class GenerationJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    status: str
+    progress: int
+    stage: str
+    error: str | None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None
+    downloaded_at: datetime | None

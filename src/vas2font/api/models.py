@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import BigInteger, ForeignKey, Index, Integer, String, and_
+from sqlalchemy import BigInteger, ForeignKey, Index, Integer, String, Text, and_
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DateTime
@@ -94,6 +94,31 @@ class UploadRecord(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class GenerationJobRecord(Base):
+    __tablename__ = "generation_jobs"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"))
+    status: Mapped[str] = mapped_column(String(20), default="queued")
+    progress: Mapped[int] = mapped_column(Integer, default=0)
+    stage: Mapped[str] = mapped_column(String(80), default="Queued")
+    error: Mapped[str | None] = mapped_column(Text)
+    font_family: Mapped[str] = mapped_column(String(80))
+    font_version: Mapped[str] = mapped_column(String(20))
+    upload_ids: Mapped[list[str]] = mapped_column(JSONB)
+    glyph_count: Mapped[int] = mapped_column(Integer, default=0)
+    input_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    downloaded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 Index(
     "ix_builtin_templates_name_version_active",
     TemplateRecord.name,
@@ -124,4 +149,10 @@ Index(
     "ix_uploads_template_active",
     UploadRecord.template_id,
     postgresql_where=UploadRecord.deleted_at.is_(None),
+)
+Index(
+    "ix_generation_jobs_project_status",
+    GenerationJobRecord.project_id,
+    GenerationJobRecord.status,
+    postgresql_where=GenerationJobRecord.deleted_at.is_(None),
 )

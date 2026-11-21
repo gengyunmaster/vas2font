@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { apiBlob } from "../api";
-import type { Project } from "../types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { api, apiBlob } from "../api";
+import type { GenerationJob, Project } from "../types";
 
 interface GeneratorSectionProps {
   project: Project;
@@ -22,6 +22,8 @@ export function GeneratorSection({ project, uploadCount, revision }: GeneratorSe
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [job, setJob] = useState<GenerationJob | null>(null);
+  const generationAttempt = useRef(0);
 
   const clearPreview = useCallback(() => {
     setPreview((current) => {
@@ -34,21 +36,51 @@ export function GeneratorSection({ project, uploadCount, revision }: GeneratorSe
   }, []);
 
   useEffect(() => {
+    generationAttempt.current += 1;
+    setBusy(false);
+    setJob(null);
     clearPreview();
     setError(
       revision === 0 ? "" : "Project inputs changed. Generate a new font to update this section.",
     );
   }, [revision, clearPreview]);
 
-  useEffect(() => clearPreview, [clearPreview]);
+  useEffect(
+    () => () => {
+      generationAttempt.current += 1;
+      clearPreview();
+    },
+    [clearPreview],
+  );
 
   async function generate() {
+    const attempt = generationAttempt.current + 1;
+    generationAttempt.current = attempt;
     setBusy(true);
     setError("");
+    setJob(null);
     clearPreview();
     let pendingUrl: string | null = null;
     try {
-      const response = await apiBlob(`/api/projects/${project.id}/font`, { method: "POST" });
+      let currentJob = await api<GenerationJob>(`/api/projects/${project.id}/font`, {
+        method: "POST",
+      });
+      setJob(currentJob);
+      while (currentJob.status === "queued" || currentJob.status === "running") {
+        await new Promise((resolve) => window.setTimeout(resolve, 400));
+        if (generationAttempt.current !== attempt) return;
+        currentJob = await api<GenerationJob>(
+          `/api/projects/${project.id}/font/jobs/${currentJob.id}`,
+        );
+        setJob(currentJob);
+      }
+      if (currentJob.status === "failed") {
+        throw new Error(currentJob.error || "Font generation failed");
+      }
+      const response = await apiBlob(
+        `/api/projects/${project.id}/font/jobs/${currentJob.id}/download`,
+      );
+      if (generationAttempt.current !== attempt) return;
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       pendingUrl = url;
@@ -58,17 +90,19 @@ export function GeneratorSection({ project, uploadCount, revision }: GeneratorSe
       style.textContent = `@font-face{font-family:"${family}";src:url("${url}") format("opentype");font-style:normal;font-weight:400;font-display:block;}`;
       document.head.appendChild(style);
       await document.fonts.load(`400 48px "${family}"`, text);
+      if (generationAttempt.current !== attempt) return;
       setPreview({
         url,
         family,
         glyphCount: Number(response.headers.get("X-Handwritten-Glyph-Count") ?? "0"),
       });
     } catch (caught) {
+      if (generationAttempt.current !== attempt) return;
       if (pendingUrl) URL.revokeObjectURL(pendingUrl);
       clearPreview();
       setError(caught instanceof Error ? caught.message : "Unable to generate the font");
     } finally {
-      setBusy(false);
+      if (generationAttempt.current === attempt) setBusy(false);
     }
   }
 
@@ -98,6 +132,15 @@ export function GeneratorSection({ project, uploadCount, revision }: GeneratorSe
             </a>
           )}
         </div>
+        {job && (
+          <div className="generation-progress" aria-live="polite">
+            <div>
+              <span>{job.stage}</span>
+              <strong>{job.progress}%</strong>
+            </div>
+            <progress max={100} value={job.progress} aria-label="Font generation progress" />
+          </div>
+        )}
         {uploadCount === 0 && (
           <p className="field-hint">Upload at least one notebook before generating.</p>
         )}

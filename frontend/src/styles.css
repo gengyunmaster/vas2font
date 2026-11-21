@@ -809,6 +809,40 @@ select:focus {
   margin-top: 10px;
 }
 
+.generation-progress {
+  margin: -8px 0 22px;
+  font-family: var(--sans);
+}
+
+.generation-progress > div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+}
+
+.generation-progress strong {
+  color: var(--cinnabar);
+}
+
+.generation-progress progress {
+  width: 100%;
+  height: 7px;
+  border: 0;
+  border-radius: 0;
+  background: var(--paper-deep);
+  accent-color: var(--cinnabar);
+}
+
+.generation-progress progress::-webkit-progress-bar {
+  background: var(--paper-deep);
+}
+
+.generation-progress progress::-webkit-progress-value {
+  background: var(--cinnabar);
+}
+
 .coverage-note {
   margin-top: 15px;
   color: var(--ink-soft);

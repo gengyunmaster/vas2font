@@ -10,6 +10,7 @@ from vas2font.api.config import get_settings
 from vas2font.api.db import sessions
 from vas2font.api.errors import ApiError
 from vas2font.api.font_routes import router as font_router
+from vas2font.api.generation_worker import generation_worker
 from vas2font.api.inspection_routes import router as inspection_router
 from vas2font.api.routes import router
 from vas2font.api.template_routes import router as template_router
@@ -21,7 +22,11 @@ from vas2font.api.upload_routes import router as upload_router
 async def lifespan(application: FastAPI):
     async with sessions() as session:
         await ensure_builtin_templates(session)
-    yield
+    await generation_worker.start()
+    try:
+        yield
+    finally:
+        await generation_worker.stop()
 
 
 app = FastAPI(

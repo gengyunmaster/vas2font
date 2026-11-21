@@ -74,6 +74,18 @@ export interface GlyphInspection {
   limit: number;
 }
 
+export interface GenerationJob {
+  id: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  progress: number;
+  stage: string;
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  downloaded_at: string | null;
+}
+
 export interface ApiFailure {
   code: string;
   message: string;
