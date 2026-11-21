@@ -20,7 +20,7 @@ from reportlab.pdfbase import pdfmetrics
 from vas2font.extract import ExtractionResult, GlyphHandwriting
 from vas2font.outline import Polygon, outline_strokes
 from vas2font.pdf import REFERENCE_FONT, register_reference_font
-from vas2font.reference import reference_glyph
+from vas2font.reference import pdf_reference_font_name, reference_glyph
 from vas2font.template import GRID_SIZE
 
 UNITS_PER_EM = 1000
@@ -76,7 +76,9 @@ def glyph_transform(glyph: GlyphHandwriting) -> GlyphTransform:
     rect = glyph.writing_rect
     font_size = glyph.reference_font_size
     scale = rect.height / GRID_SIZE
-    advance_points = pdfmetrics.stringWidth(glyph.character, REFERENCE_FONT, font_size)
+    advance_points = pdfmetrics.stringWidth(
+        glyph.character, pdf_reference_font_name(glyph.character), font_size
+    )
     advance_width = round(advance_points * UNITS_PER_EM / font_size)
     advance_vas = advance_points * scale
     origin_x = rect.x + (rect.width - advance_vas) / 2

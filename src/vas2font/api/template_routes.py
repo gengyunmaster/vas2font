@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Header, Response
 from sqlalchemy import or_, select
+from starlette.concurrency import run_in_threadpool
 
 from vas2font.api.dependencies import (
     ProjectDependency,
@@ -183,6 +184,13 @@ async def delete_template(
     return MessageResponse(message="Template deleted")
 
 
+def render_pdf_bytes(template, filename: str) -> bytes:
+    with TemporaryDirectory(prefix="vas2font-template-") as directory:
+        path = Path(directory) / filename
+        render_template_pdf(template, path)
+        return path.read_bytes()
+
+
 @router.get("/templates/{template_id}/pdf")
 async def template_pdf(
     template_id: UUID,
@@ -200,15 +208,13 @@ async def template_pdf(
     if template.project_id is not None:
         await authorized_project(template.project_id, session, authorization)
     parsed = template_from_manifest(template.manifest)
-    with TemporaryDirectory(prefix="vas2font-template-") as directory:
-        path = Path(directory) / download_name(template.name, template.version)
-        render_template_pdf(parsed, path)
-        content = path.read_bytes()
+    filename = download_name(template.name, template.version)
+    content = await run_in_threadpool(render_pdf_bytes, parsed, filename)
     return Response(
         content,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="{path.name}"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "no-store",
         },
     )

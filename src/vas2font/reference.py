@@ -6,6 +6,9 @@ from io import BytesIO
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
 
+REFERENCE_FONT = "TemplateReference"
+FALLBACK_REFERENCE_FONT = "TemplateReferenceFallback"
+
 
 @dataclass(frozen=True)
 class ReferenceGlyph:
@@ -19,9 +22,29 @@ def reference_font() -> TTFont:
     return TTFont(BytesIO(data))
 
 
+@lru_cache(maxsize=1)
+def fallback_reference_font() -> TTFont:
+    data = files("vas2font").joinpath("assets/noto-sans-jp-fallback.ttf").read_bytes()
+    return TTFont(BytesIO(data))
+
+
+@cache
+def uses_fallback(character: str) -> bool:
+    return ord(character) not in reference_font().getBestCmap()
+
+
+def has_reference_glyph(character: str) -> bool:
+    font = fallback_reference_font() if uses_fallback(character) else reference_font()
+    return ord(character) in font.getBestCmap()
+
+
+def pdf_reference_font_name(character: str) -> str:
+    return FALLBACK_REFERENCE_FONT if uses_fallback(character) else REFERENCE_FONT
+
+
 @cache
 def reference_glyph(character: str, font_size: float) -> ReferenceGlyph:
-    font = reference_font()
+    font = fallback_reference_font() if uses_fallback(character) else reference_font()
     glyph_set = font.getGlyphSet()
     name = font.getBestCmap()[ord(character)]
     scale = font_size / font["head"].unitsPerEm

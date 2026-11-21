@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from vas2font.api.errors import ApiError
 from vas2font.api.models import TemplateRecord
 from vas2font.charsets import CHARACTER_SETS, CharacterSet
-from vas2font.reference import reference_font
+from vas2font.reference import has_reference_glyph
 from vas2font.template import build_template
 
 MAX_CUSTOM_CODEPOINTS = 20_000
@@ -18,15 +18,13 @@ def normalize_characters(value: str) -> tuple[str, ...]:
     characters = []
     seen = set()
     unsupported = []
-    cmap = reference_font().getBestCmap()
     for character in normalized:
         if character.isspace():
             continue
         if character in seen:
             continue
-        if (
-            unicodedata.category(character).startswith("C")
-            or ord(character) not in cmap
+        if unicodedata.category(character).startswith("C") or not has_reference_glyph(
+            character
         ):
             unsupported.append(character)
             continue

@@ -197,17 +197,16 @@ The interface must not describe this operation as permanent erasure of the store
 
 ### 7.1 Built-in templates
 
-The initial built-in template is:
+The built-in catalog consists of the following version `1` templates:
 
-- `representative-100`, version `1`.
+- `representative-100`: 100 representative letters, digits, symbols, and Han characters.
+- `latin-letters`: 52 uppercase and lowercase Latin letters.
+- `digits`: 10 ASCII digits.
+- `ascii-punctuation`: all 32 ASCII punctuation characters.
+- `gb2312-han`: all 6,763 GB2312 Han characters.
+- `gb2312-ascii`: 7,538 non-whitespace handwriting code points covering every assigned GB2312 character and all printable ASCII characters except space.
 
-Additional built-ins may include:
-
-- English uppercase and lowercase letters.
-- Digits.
-- ASCII punctuation.
-- GB2312 Han characters.
-- Combined GB2312 and ASCII coverage.
+Required whitespace glyphs are supplied automatically by the font builder rather than handwritten. A pinned fallback reference font covers GB2312 code points absent from the primary reference font.
 
 Only implemented and validated templates may appear in the built-in catalog. Built-in templates are read-only and cannot be deleted by users.
 
@@ -758,7 +757,6 @@ The initial web implementation is complete when all of the following are demonst
 These items are intentionally deferred and must not block the initial implementation:
 
 - Asynchronous generation for very large character sets.
-- Additional built-in character sets.
 - More extensive OTF metadata editing.
 - Browser-based glyph correction or vector editing.
 - Kerning and other OpenType layout features.

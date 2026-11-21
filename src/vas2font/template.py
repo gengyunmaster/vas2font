@@ -1,11 +1,12 @@
 import json
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
 from reportlab.lib.pagesizes import A4
 
 from vas2font.charsets import CharacterSet
-from vas2font.reference import reference_glyph
+from vas2font.reference import reference_font, reference_glyph
 
 PAGE_WIDTH, PAGE_HEIGHT = A4
 PAGE_MARGIN_X = 28.0
@@ -109,32 +110,69 @@ class Template:
 
 
 def grid_for_character(character: str) -> str:
-    return "rice" if "\u4e00" <= character <= "\u9fff" else "four-line"
+    return (
+        "rice" if unicodedata.east_asian_width(character) in ("W", "F") else "four-line"
+    )
+
+
+def fit_rice_font_size(character: str) -> float:
+    font = reference_font()
+    units_per_em = font["head"].unitsPerEm
+    ascent = font["OS/2"].sTypoAscender / units_per_em
+    descent = font["OS/2"].sTypoDescender / units_per_em
+    for size in range(int(REFERENCE_FONT_SIZE), 23, -1):
+        glyph = reference_glyph(character, float(size))
+        if glyph.bounds is None:
+            return float(size)
+        x_min, y_min, x_max, y_max = glyph.bounds
+        baseline = GRID_SIZE / 2 + (ascent + descent) * size / 2
+        origin_x = (GRID_SIZE - glyph.advance) / 2
+        if (
+            origin_x + x_min >= -1e-6
+            and origin_x + x_max <= GRID_SIZE + 1e-6
+            and baseline - y_max >= -1e-6
+            and baseline - y_min <= GRID_SIZE + 1e-6
+        ):
+            return float(size)
+    raise ValueError(f"Reference character exceeds the rice cell: {character}")
+
+
+def fit_latin_font_size(characters: tuple[str, ...]) -> float:
+    if not characters:
+        return LATIN_REFERENCE_FONT_SIZE
+    for size in range(int(LATIN_REFERENCE_FONT_SIZE), 23, -1):
+        outlines = [
+            reference_glyph(character, float(size)).bounds for character in characters
+        ]
+        outlines = [bounds for bounds in outlines if bounds is not None]
+        highest = max(bounds[3] for bounds in outlines)
+        lowest = max(-bounds[1] for bounds in outlines)
+        if highest + lowest + LATIN_EDGE_MARGIN * 2 <= GRID_SIZE:
+            return float(size)
+    raise ValueError("Latin reference characters exceed the writing cell")
 
 
 def latin_guides(
     characters: tuple[str, ...],
+    font_size: float,
 ) -> tuple[float | None, float | None]:
     if not characters:
         return None, None
-    glyphs = [
-        reference_glyph(character, LATIN_REFERENCE_FONT_SIZE)
-        for character in characters
-    ]
+    glyphs = [reference_glyph(character, font_size) for character in characters]
     outlines = [glyph.bounds for glyph in glyphs if glyph.bounds is not None]
     highest = max(bounds[3] for bounds in outlines)
     lowest = max(-bounds[1] for bounds in outlines)
     baseline_offset = LATIN_EDGE_MARGIN + highest
     if baseline_offset + lowest + LATIN_EDGE_MARGIN > GRID_SIZE + 1e-6:
         raise ValueError("Latin reference characters exceed the writing cell")
-    x_bounds = reference_glyph("x", LATIN_REFERENCE_FONT_SIZE).bounds
+    x_bounds = reference_glyph("x", font_size).bounds
     if x_bounds is None:
         raise ValueError("Reference font has no x-height glyph")
     return baseline_offset, baseline_offset - x_bounds[3]
 
 
-def latin_width(character: str) -> float:
-    glyph = reference_glyph(character, LATIN_REFERENCE_FONT_SIZE)
+def latin_width(character: str, font_size: float) -> float:
+    glyph = reference_glyph(character, font_size)
     overhang = 0.0
     if glyph.bounds is not None:
         x_min, _, x_max, _ = glyph.bounds
@@ -178,7 +216,8 @@ def build_template(character_set: CharacterSet) -> Template:
         for character in character_set.characters
         if grid_for_character(character) == "four-line"
     )
-    baseline_offset, x_height_offset = latin_guides(latin_characters)
+    latin_font_size = fit_latin_font_size(latin_characters)
+    baseline_offset, x_height_offset = latin_guides(latin_characters, latin_font_size)
     pages = []
     for page_index, offset in enumerate(
         range(0, len(character_set.characters), CHARACTERS_PER_PAGE)
@@ -194,9 +233,13 @@ def build_template(character_set: CharacterSet) -> Template:
                     character=character,
                     row=index // COLUMN_COUNT,
                     column=index % COLUMN_COUNT,
-                    box_width=(latin_width(character) if is_latin else GRID_SIZE),
+                    box_width=(
+                        latin_width(character, latin_font_size)
+                        if is_latin
+                        else GRID_SIZE
+                    ),
                     font_size=(
-                        LATIN_REFERENCE_FONT_SIZE if is_latin else REFERENCE_FONT_SIZE
+                        latin_font_size if is_latin else fit_rice_font_size(character)
                     ),
                     baseline_offset=baseline_offset if is_latin else None,
                     x_height_offset=x_height_offset if is_latin else None,

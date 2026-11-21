@@ -26,4 +26,4 @@ vas2font = "vas2font.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-vas2font = ["assets/*.ttf", "assets/OFL.txt", "node/*.mjs", "node/package*.json"]
+vas2font = ["assets/*.ttf", "assets/*OFL.txt", "node/*.mjs", "node/package*.json"]

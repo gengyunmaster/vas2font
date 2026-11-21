@@ -6,6 +6,11 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
 
+from vas2font.reference import (
+    FALLBACK_REFERENCE_FONT,
+    REFERENCE_FONT,
+    pdf_reference_font_name,
+)
 from vas2font.template import (
     PAGE_HEIGHT,
     PAGE_MARGIN_X,
@@ -15,18 +20,22 @@ from vas2font.template import (
     TemplateCell,
 )
 
-REFERENCE_FONT = "TemplateReference"
 TITLE_COLOR = HexColor("#20242A")
 GUIDE_COLOR = HexColor("#AEB6C2")
 INNER_GUIDE_COLOR = HexColor("#C6CCD5")
 
 
 def register_reference_font() -> None:
-    if REFERENCE_FONT in pdfmetrics.getRegisteredFontNames():
-        return
-    font_path = files("vas2font").joinpath("assets/noto-sans-sc-regular.ttf")
-    with font_path.open("rb") as font_file:
-        pdfmetrics.registerFont(TTFont(REFERENCE_FONT, font_file))
+    fonts = (
+        (REFERENCE_FONT, "assets/noto-sans-sc-regular.ttf"),
+        (FALLBACK_REFERENCE_FONT, "assets/noto-sans-jp-fallback.ttf"),
+    )
+    for name, asset in fonts:
+        if name in pdfmetrics.getRegisteredFontNames():
+            continue
+        font_path = files("vas2font").joinpath(asset)
+        with font_path.open("rb") as font_file:
+            pdfmetrics.registerFont(TTFont(name, font_file))
 
 
 def pdf_y(top_y: float) -> float:
@@ -86,7 +95,7 @@ def draw_four_line_grid(canvas: Canvas, cell: TemplateCell) -> None:
 def draw_reference_character(canvas: Canvas, cell: TemplateCell) -> None:
     canvas.saveState()
     canvas.setFillColor(TITLE_COLOR)
-    canvas.setFont(REFERENCE_FONT, cell.reference_font_size)
+    canvas.setFont(pdf_reference_font_name(cell.character), cell.reference_font_size)
     if cell.baseline_y is not None:
         baseline = pdf_y(cell.baseline_y)
     else:

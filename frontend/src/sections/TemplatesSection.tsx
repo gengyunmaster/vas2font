@@ -17,6 +17,7 @@ export function TemplatesSection({ projectId, templates, onChanged }: TemplatesS
   const [characters, setCharacters] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState("");
   const [deleting, setDeleting] = useState<Template | null>(null);
   const characterCount = useMemo(
     () =>
@@ -63,6 +64,7 @@ export function TemplatesSection({ projectId, templates, onChanged }: TemplatesS
 
   async function download(template: Template) {
     setError("");
+    setDownloading(template.id);
     try {
       const response = await apiBlob(`/api/templates/${template.id}/pdf`);
       downloadBlob(
@@ -71,6 +73,8 @@ export function TemplatesSection({ projectId, templates, onChanged }: TemplatesS
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to download the PDF");
+    } finally {
+      setDownloading("");
     }
   }
 
@@ -128,8 +132,9 @@ export function TemplatesSection({ projectId, templates, onChanged }: TemplatesS
                 type="button"
                 className="button button-small button-secondary"
                 onClick={() => download(template)}
+                disabled={downloading === template.id}
               >
-                Download PDF
+                {downloading === template.id ? "Preparing PDF..." : "Download PDF"}
               </button>
               {!template.built_in && (
                 <>
