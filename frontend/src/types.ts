@@ -44,6 +44,36 @@ export interface Upload {
   updated_at: string;
 }
 
+export interface GlyphPreview {
+  view_box: string;
+  paths: { d: string; stroke_width: number }[];
+}
+
+export interface GlyphItem {
+  character: string;
+  codepoint: number;
+  status: "covered" | "missing";
+  source_upload_id: string | null;
+  source_filename: string | null;
+  source_position: number | null;
+  template_name: string | null;
+  template_version: number | null;
+  duplicate_count: number;
+  overridden_upload_ids: string[];
+  overflow_strokes: number;
+  preview: GlyphPreview | null;
+}
+
+export interface GlyphInspection {
+  items: GlyphItem[];
+  total: number;
+  covered: number;
+  missing: number;
+  duplicates: number;
+  offset: number;
+  limit: number;
+}
+
 export interface ApiFailure {
   code: string;
   message: string;

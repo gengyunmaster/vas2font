@@ -1,4 +1,4 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { api, apiBlob, downloadBlob } from "../api";
 import { ConfirmDialog, Modal } from "../components/Modal";
 import type { Template } from "../types";
@@ -7,9 +7,17 @@ interface TemplatesSectionProps {
   projectId: string;
   templates: Template[];
   onChanged: () => Promise<void>;
+  seed: { characters: string; key: number } | null;
+  onSeedConsumed: () => void;
 }
 
-export function TemplatesSection({ projectId, templates, onChanged }: TemplatesSectionProps) {
+export function TemplatesSection({
+  projectId,
+  templates,
+  onChanged,
+  seed,
+  onSeedConsumed,
+}: TemplatesSectionProps) {
   const [editing, setEditing] = useState<Template | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
@@ -19,6 +27,18 @@ export function TemplatesSection({ projectId, templates, onChanged }: TemplatesS
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState("");
   const [deleting, setDeleting] = useState<Template | null>(null);
+
+  useEffect(() => {
+    if (!seed) return;
+    setEditing(null);
+    setName("Corrections");
+    setVersion(1);
+    setCharacters(seed.characters);
+    setError("");
+    setFormOpen(true);
+    onSeedConsumed();
+  }, [seed, onSeedConsumed]);
+
   const characterCount = useMemo(
     () =>
       new Set(Array.from(characters.normalize("NFC")).filter((character) => !/\s/.test(character)))

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, api } from "./api";
 import { GeneratorSection } from "./sections/GeneratorSection";
+import { GlyphsSection } from "./sections/GlyphsSection";
 import { Overview } from "./sections/Overview";
 import { TemplatesSection } from "./sections/TemplatesSection";
 import { UploadsSection } from "./sections/UploadsSection";
 import type { Project, Template, Upload } from "./types";
 
-type Section = "overview" | "templates" | "uploads" | "generate";
+type Section = "overview" | "templates" | "uploads" | "glyphs" | "generate";
 
 interface ProjectPageProps {
   projectId: string;
@@ -19,6 +20,9 @@ export function ProjectPage({ projectId, onExit }: ProjectPageProps) {
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [section, setSection] = useState<Section>("overview");
   const [revision, setRevision] = useState(0);
+  const [templateSeed, setTemplateSeed] = useState<{ characters: string; key: number } | null>(
+    null,
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -62,6 +66,7 @@ export function ProjectPage({ projectId, onExit }: ProjectPageProps) {
       count: templates.filter((template) => !template.built_in).length,
     },
     { id: "uploads", label: "Uploads", count: uploads.length },
+    { id: "glyphs", label: "Glyphs" },
     { id: "generate", label: "Generate" },
   ];
 
@@ -144,7 +149,13 @@ export function ProjectPage({ projectId, onExit }: ProjectPageProps) {
           />
         )}
         {section === "templates" && (
-          <TemplatesSection projectId={project.id} templates={templates} onChanged={changed} />
+          <TemplatesSection
+            projectId={project.id}
+            templates={templates}
+            onChanged={changed}
+            seed={templateSeed}
+            onSeedConsumed={() => setTemplateSeed(null)}
+          />
         )}
         {section === "uploads" && (
           <UploadsSection
@@ -152,6 +163,16 @@ export function ProjectPage({ projectId, onExit }: ProjectPageProps) {
             templates={templates}
             uploads={uploads}
             onChanged={changed}
+          />
+        )}
+        {section === "glyphs" && (
+          <GlyphsSection
+            key={`${project.id}-${revision}`}
+            projectId={project.id}
+            onCreateCorrection={(characters) => {
+              setTemplateSeed({ characters, key: Date.now() });
+              setSection("templates");
+            }}
           />
         )}
         {section === "generate" && (

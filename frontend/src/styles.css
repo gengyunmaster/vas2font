@@ -817,6 +817,138 @@ select:focus {
   line-height: 1.5;
 }
 
+.glyph-summary {
+  display: flex;
+  margin-bottom: 22px;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.76rem;
+  gap: 24px;
+}
+
+.glyph-summary strong {
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.glyph-toolbar {
+  display: grid;
+  align-items: end;
+  margin-bottom: 24px;
+  grid-template-columns: minmax(220px, 1fr) 180px auto;
+  gap: 12px;
+}
+
+.glyph-search {
+  display: flex;
+  gap: 8px;
+}
+
+.glyph-toolbar > label {
+  display: grid;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  gap: 5px;
+}
+
+.glyph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 12px;
+}
+
+.glyph-card {
+  position: relative;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: rgb(245 237 220 / 38%);
+}
+
+.glyph-card-selected {
+  border-color: var(--cinnabar);
+  background: rgb(147 76 59 / 5%);
+}
+
+.glyph-select {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  gap: 5px;
+}
+
+.glyph-select input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+}
+
+.glyph-thumbnail {
+  display: grid;
+  height: 110px;
+  place-items: center;
+  margin: 8px 0;
+  border: 1px solid rgb(119 96 71 / 12%);
+  background: rgb(255 253 247 / 55%);
+  color: var(--ink);
+}
+
+.glyph-thumbnail svg {
+  width: 100%;
+  height: 100%;
+}
+
+.glyph-thumbnail > span {
+  font-size: 2.2rem;
+}
+
+.glyph-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.glyph-card-title strong {
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.glyph-card-title code {
+  color: var(--ink-soft);
+  font-size: 0.58rem;
+}
+
+.glyph-source {
+  min-height: 31px;
+  margin: 6px 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.glyph-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24px;
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  gap: 16px;
+}
+
 .preview-card {
   min-height: 520px;
   padding: 25px;
@@ -1122,6 +1254,26 @@ select:focus {
 
   .font-preview {
     font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .glyph-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .glyph-summary {
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .glyph-grid {
+    grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+  }
+
+  .pagination {
+    gap: 9px;
+    flex-wrap: wrap;
   }
 }
 

@@ -10,6 +10,7 @@ from vas2font.api.config import get_settings
 from vas2font.api.db import sessions
 from vas2font.api.errors import ApiError
 from vas2font.api.font_routes import router as font_router
+from vas2font.api.inspection_routes import router as inspection_router
 from vas2font.api.routes import router
 from vas2font.api.template_routes import router as template_router
 from vas2font.api.template_service import ensure_builtin_templates
@@ -35,6 +36,7 @@ app.include_router(router)
 app.include_router(template_router)
 app.include_router(upload_router)
 app.include_router(font_router)
+app.include_router(inspection_router)
 
 
 @app.exception_handler(ApiError)

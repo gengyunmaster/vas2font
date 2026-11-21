@@ -113,3 +113,38 @@ class UploadResponse(BaseModel):
     validation_report: dict
     created_at: datetime
     updated_at: datetime
+
+
+class GlyphPreviewPath(BaseModel):
+    d: str
+    stroke_width: float
+
+
+class GlyphPreview(BaseModel):
+    view_box: str
+    paths: list[GlyphPreviewPath]
+
+
+class GlyphInspectionItem(BaseModel):
+    character: str
+    codepoint: int
+    status: str
+    source_upload_id: UUID | None = None
+    source_filename: str | None = None
+    source_position: int | None = None
+    template_name: str | None = None
+    template_version: int | None = None
+    duplicate_count: int = 0
+    overridden_upload_ids: list[UUID] = []
+    overflow_strokes: int = 0
+    preview: GlyphPreview | None = None
+
+
+class GlyphInspectionResponse(BaseModel):
+    items: list[GlyphInspectionItem]
+    total: int
+    covered: int
+    missing: int
+    duplicates: int
+    offset: int
+    limit: int
