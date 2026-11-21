@@ -2,9 +2,9 @@
 
 ## Document status
 
-- Status: Draft for review
+- Status: Approved
 - Audience: Project maintainer and implementation agents
-- Implementation constraint: This document is the baseline for web development after review and approval
+- Implementation constraint: This document is the baseline for web development
 - User interface language: English only
 - Internationalization: Out of scope
 

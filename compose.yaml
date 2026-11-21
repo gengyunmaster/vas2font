@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:18.4
+    environment:
+      POSTGRES_USER: vas2font
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vas2font}
+      POSTGRES_DB: vas2font
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vas2font -d vas2font"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+asyncpg://vas2font:${POSTGRES_PASSWORD:-vas2font}@db:5432/vas2font
+      FRONTEND_DIST: /app/frontend/dist
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

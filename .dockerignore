@@ -1,0 +1,12 @@
+.git
+.gitignore
+.ruff_cache
+.venv
+build
+dist
+docs
+samples
+**/__pycache__
+**/*.py[cod]
+**/node_modules
+frontend/dist
