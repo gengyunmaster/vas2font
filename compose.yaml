@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
 
   web:
+    image: vas2font-web:latest
     build: .
     environment:
       DATABASE_URL: postgresql+asyncpg://vas2font:${POSTGRES_PASSWORD:-vas2font}@db:5432/vas2font
