@@ -1,15 +1,34 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from vas2font.api.db import sessions
 from vas2font.api.errors import ApiError
 from vas2font.api.routes import router
+from vas2font.api.template_routes import router as template_router
+from vas2font.api.template_service import ensure_builtin_templates
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    async with sessions() as session:
+        await ensure_builtin_templates(session)
+    yield
+
 
 app = FastAPI(
-    title="VAS2Font", version="0.1.0", docs_url=None, redoc_url=None, openapi_url=None
+    title="VAS2Font",
+    version="0.1.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+    lifespan=lifespan,
 )
 app.include_router(router)
+app.include_router(template_router)
 
 
 @app.exception_handler(ApiError)

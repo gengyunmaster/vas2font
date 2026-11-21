@@ -1,11 +1,7 @@
-from typing import Annotated
-from uuid import UUID
-
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Request
 from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from vas2font.api.db import get_session
+from vas2font.api.dependencies import ProjectDependency, SessionDependency
 from vas2font.api.errors import ApiError
 from vas2font.api.models import ProjectRecord, TemplateRecord, UploadRecord, utc_now
 from vas2font.api.rate_limits import open_project_limiter
@@ -16,10 +12,9 @@ from vas2font.api.schemas import (
     ProjectMetadataRequest,
     ProjectResponse,
 )
-from vas2font.api.security import access_code_hash, bearer_code, generate_access_code
+from vas2font.api.security import access_code_hash, generate_access_code
 
 router = APIRouter(prefix="/api")
-SessionDependency = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.get("/health")
@@ -62,27 +57,6 @@ async def open_project(
     if project is None:
         raise ApiError(401, "invalid_access_code", "The project access code is invalid")
     return project
-
-
-async def authorized_project(
-    project_id: UUID,
-    session: SessionDependency,
-    authorization: Annotated[str | None, Header()] = None,
-) -> ProjectRecord:
-    project = await session.scalar(
-        select(ProjectRecord).where(
-            ProjectRecord.id == project_id,
-            ProjectRecord.access_code_hash
-            == access_code_hash(bearer_code(authorization)),
-            ProjectRecord.deleted_at.is_(None),
-        )
-    )
-    if project is None:
-        raise ApiError(401, "invalid_access_code", "The project access code is invalid")
-    return project
-
-
-ProjectDependency = Annotated[ProjectRecord, Depends(authorized_project)]
 
 
 @router.get("/projects/{project_id}", response_model=ProjectResponse)

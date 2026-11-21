@@ -52,6 +52,14 @@ class TemplateRecord(Base):
     )
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    @property
+    def built_in(self) -> bool:
+        return self.project_id is None
+
+    @property
+    def character_count(self) -> int:
+        return int(self.manifest["character_count"])
+
 
 class UploadRecord(Base):
     __tablename__ = "uploads"

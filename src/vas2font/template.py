@@ -112,7 +112,11 @@ def grid_for_character(character: str) -> str:
     return "rice" if "\u4e00" <= character <= "\u9fff" else "four-line"
 
 
-def latin_guides(characters: tuple[str, ...]) -> tuple[float, float]:
+def latin_guides(
+    characters: tuple[str, ...],
+) -> tuple[float | None, float | None]:
+    if not characters:
+        return None, None
     glyphs = [
         reference_glyph(character, LATIN_REFERENCE_FONT_SIZE)
         for character in characters
@@ -199,6 +203,42 @@ def build_template(character_set: CharacterSet) -> Template:
                 )
             )
         pages.append(TemplatePage(page_index=page_index, cells=tuple(cells)))
+    return Template(character_set=character_set, pages=tuple(pages))
+
+
+def template_from_manifest(manifest: dict[str, object]) -> Template:
+    if manifest.get("format") != "vas2font-template":
+        raise ValueError("Invalid template manifest")
+    pages = []
+    characters = []
+    for raw_page in manifest["pages"]:
+        cells = []
+        for raw_cell in raw_page["cells"]:
+            reference_rect = Rect(**raw_cell["reference_rect"])
+            writing_rect = Rect(**raw_cell["writing_rect"])
+            baseline_y = raw_cell.get("baseline_y")
+            x_height_y = raw_cell.get("x_height_y")
+            cell = TemplateCell(
+                character=raw_cell["character"],
+                row=raw_cell["row"],
+                column=raw_cell["column"],
+                grid=raw_cell["grid"],
+                reference_rect=reference_rect,
+                writing_rect=writing_rect,
+                reference_font_size=raw_cell["reference_font_size"],
+                baseline_y=(float(baseline_y) if baseline_y is not None else None),
+                x_height_y=(float(x_height_y) if x_height_y is not None else None),
+            )
+            cells.append(cell)
+            characters.append(cell.character)
+        pages.append(
+            TemplatePage(page_index=raw_page["page_index"], cells=tuple(cells))
+        )
+    character_set = CharacterSet(
+        identifier=manifest["charset_id"],
+        version=manifest["charset_version"],
+        characters=tuple(characters),
+    )
     return Template(character_set=character_set, pages=tuple(pages))
 
 
