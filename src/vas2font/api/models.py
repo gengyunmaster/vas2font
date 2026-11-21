@@ -5,7 +5,7 @@ from uuid import UUID
 
 from sqlalchemy import BigInteger, ForeignKey, Index, Integer, String, and_
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DateTime
 
 from vas2font.api.db import Base
@@ -67,6 +67,7 @@ class UploadRecord(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id"))
     template_id: Mapped[UUID] = mapped_column(ForeignKey("templates.id"))
+    template: Mapped[TemplateRecord] = relationship(lazy="joined")
     position: Mapped[int] = mapped_column(Integer)
     notebook: Mapped[dict[str, Any]] = mapped_column(JSONB)
     original_filename: Mapped[str] = mapped_column(String(255))

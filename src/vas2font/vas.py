@@ -164,7 +164,10 @@ def parse_page(raw: object) -> NotebookPage:
 
 
 def load_notebook(path: Path) -> Notebook:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    return parse_notebook(json.loads(path.read_text(encoding="utf-8")))
+
+
+def parse_notebook(data: object) -> Notebook:
     if not isinstance(data, dict) or data.get("format") != "vas-notebook":
         raise ValueError("Not a vas notebook file")
     version = data.get("version")

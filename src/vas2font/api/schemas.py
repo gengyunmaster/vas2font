@@ -91,3 +91,24 @@ class TemplateResponse(BaseModel):
     character_count: int
     created_at: datetime
     updated_at: datetime
+
+
+class UploadOrderRequest(BaseModel):
+    ordered_ids: list[UUID]
+
+
+class UploadResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    template_id: UUID
+    position: int
+    original_filename: str
+    file_size_bytes: int
+    sha256: str
+    vas_version: int
+    glyph_count: int
+    stroke_count: int
+    validation_report: dict
+    created_at: datetime
+    updated_at: datetime

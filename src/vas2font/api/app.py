@@ -10,6 +10,7 @@ from vas2font.api.errors import ApiError
 from vas2font.api.routes import router
 from vas2font.api.template_routes import router as template_router
 from vas2font.api.template_service import ensure_builtin_templates
+from vas2font.api.upload_routes import router as upload_router
 
 
 @asynccontextmanager
@@ -29,6 +30,7 @@ app = FastAPI(
 )
 app.include_router(router)
 app.include_router(template_router)
+app.include_router(upload_router)
 
 
 @app.exception_handler(ApiError)
