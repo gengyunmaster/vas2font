@@ -20,6 +20,8 @@ jobs:
           node-version: "24"
       - name: Install locked Python dependencies
         run: uv sync --locked
+      - name: Install stroke outline dependencies
+        run: npm ci --prefix src/vas2font/node
       - name: Run Python quality checks
         run: |
           uv run ruff check src migrations tests
