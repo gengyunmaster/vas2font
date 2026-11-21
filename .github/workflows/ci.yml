@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.15"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install locked Python dependencies
+        run: uv sync --locked
+      - name: Run Python quality checks
+        run: |
+          uv run ruff check src migrations tests
+          uv run ruff format --check src migrations tests
+          uv run pytest
+      - name: Install locked frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run frontend quality checks
+        working-directory: frontend
+        run: |
+          npm run lint
+          npm run build
+      - name: Start the application
+        run: docker compose up -d --build
+      - name: Wait for the application
+        run: |
+          for attempt in {1..90}; do
+            if curl -fsS http://127.0.0.1:8000/api/health; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Run browser regression tests
+        working-directory: frontend
+        run: npm run test:e2e
+      - name: Stop the application
+        if: always()
+        run: docker compose down -v

@@ -18,8 +18,8 @@ WORKDIR /app
 ENV UV_LINK_MODE=copy
 COPY pyproject.toml uv.lock ./
 COPY src/ ./src/
-RUN uv sync --locked && uv run ruff check src && uv run ruff format --check src
-RUN uv sync --locked --no-dev
+RUN uv sync --locked --no-editable && uv run ruff check src && uv run ruff format --check src
+RUN uv sync --locked --no-dev --no-editable
 
 FROM python:3.12-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 && rm -rf /var/lib/apt/lists/*

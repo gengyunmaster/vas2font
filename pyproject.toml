@@ -35,3 +35,8 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 vas2font = ["assets/*.ttf", "assets/*OFL.txt", "node/*.mjs", "node/package*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
